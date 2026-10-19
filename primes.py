@@ -20,7 +20,7 @@ def generate_small_primes(limit=1000):
     )
 
 
-def is_probable_prime(n, rounds=20):
+def is_probable_prime(n, rounds=40):
     """Check whether n is probably prime using Miller-Rabin."""
 
     if n < 2:
