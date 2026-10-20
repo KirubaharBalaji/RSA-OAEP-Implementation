@@ -2,14 +2,24 @@
 import hashlib
 import secrets
 
+
 def mgf1(seed: bytes, length: int) -> bytes:
+    """Generate a mask using MGF1 with SHA-256."""
+
+    # Validate inputs
+    if not isinstance(seed, bytes):
+        raise TypeError("Seed must be bytes")
+
+    if not isinstance(length, int) or isinstance(length, bool):
+        raise TypeError("Mask length must be an integer")
+
     # SHA-256 produces 32 bytes per hash
     h_len = hashlib.sha256().digest_size
 
     if length < 0 or length > h_len * (2**32):
         raise ValueError("Invalid mask length")
 
-    mask = b""
+    mask = bytearray()
 
     # Generate enough hash outputs to reach the required length
     for counter in range((length + h_len - 1) // h_len):
@@ -21,13 +31,25 @@ def mgf1(seed: bytes, length: int) -> bytes:
         digest = hashlib.sha256(seed + counter_bytes).digest()
 
         # Add the hash output to our mask
-        mask += digest
+        mask.extend(digest)
 
     # Return exactly the requested number of bytes
-    return mask[:length]
+    return bytes(mask[:length])
 
 
 def oaep_encode(message: bytes, k: int, label: bytes = b"") -> bytes:
+    """Encode a message using OAEP with SHA-256."""
+
+    # Validate inputs
+    if not isinstance(message, bytes):
+        raise TypeError("Message must be bytes")
+
+    if not isinstance(k, int) or isinstance(k, bool):
+        raise TypeError("Modulus length must be an integer")
+
+    if not isinstance(label, bytes):
+        raise TypeError("Label must be bytes")
+
     h_len = hashlib.sha256().digest_size
 
     # Check whether the RSA modulus is large enough
@@ -63,6 +85,15 @@ def oaep_encode(message: bytes, k: int, label: bytes = b"") -> bytes:
 
 
 def oaep_decode(encoded: bytes, label: bytes = b"") -> bytes:
+    """Decode an OAEP-encoded message using SHA-256."""
+
+    # Validate inputs
+    if not isinstance(encoded, bytes):
+        raise TypeError("Encoded message must be bytes")
+
+    if not isinstance(label, bytes):
+        raise TypeError("Label must be bytes")
+
     h_len = hashlib.sha256().digest_size
     k = len(encoded)
 
