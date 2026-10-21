@@ -2,7 +2,7 @@ from math import gcd
 from primes import generate_prime
 
 
-def generate_keypair(bits, e):
+def generate_keypair(bits, e=65537):
     """Generate RSA public and private keys."""
 
     # Validate the key size.
