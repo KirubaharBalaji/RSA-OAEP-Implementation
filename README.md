@@ -14,7 +14,9 @@ A Python implementation of RSA public-key encryption integrated with OAEP (Optim
 - [Usage](#usage)
 - [Key Implementation Details](#key-implementation-details)
 - [Notes](#notes)
+- [Benchmarking](#benchmarking)
 - [Testing](#testing)
+- [Reference](#reference)
 
 
 
@@ -40,6 +42,8 @@ This project implements the following components:
 - **Optional OAEP label:** Supports a byte-string label that must match during encryption and decryption.
 - **Input validation:** Checks key sizes, exponent constraints, integer ranges, and invalid OAEP encoding conditions.
 - **Randomized encryption:** OAEP uses a random seed, so encrypting the same plaintext repeatedly should normally produce different ciphertexts.
+- **Automated tests:** Separate test modules for the RSA, OAEP, integration, and prime-generation components.
+- **Performance benchmark:** Measures RSA key generation, encryption, and decryption for 2048-bit and 3072-bit keys.
 
 ## How It Works
 
@@ -110,7 +114,8 @@ The integration layer defaults to `e = 65537`; the RSA module requires a modulus
 4. Apply the Miller–Rabin probable-prime test (40 rounds by default).
 5. Return a candidate that passes the test.
 
-Miller–Rabin is probabilistic: a passing candidate is considered probably prime.
+The primes.py does not use the small-prime sieve. Miller–Rabin is probabilistic: a passing candidate is considered probably prime.
+
 
 ### 3. OAEP encoding
 
@@ -156,20 +161,26 @@ Invalid padding or a mismatched label raises a `ValueError`.
 
 ```
 .
-├── main.py             # Public integration API and example entry point
-├── benchmark_rsa.py    # Benchmark Test for RSA Algorithm
-├── rsa.py              # RSA key generation and integer operations
-├── oaep.py             # OAEP encoding/decoding and MGF1
-├── primes.py            # Prime generation and Miller–Rabin test
-├── byte_conversion.py  # String/byte/integer conversion helpers
+├── main.py                 # Public integration and entry point
+├── rsa.py                  # RSA key generation and integer operations
+├── oaep.py                 # OAEP encoding/decoding and MGF1
+├── primes.py               # Prime generation and Miller–Rabin test
+├── byte_conversion.py      # String/byte/integer conversion helpers
+├── benchmark_rsa.py        # Benchmark Test for RSA Algorithm
+├── tests/                  # Test Case Folder
+│   ├── test_oaep.py        # Test Cases for OAEP Encoding and Decoding
+│   ├── test_rsa.py         # Test Cases for RSA Encryption and Decryption
+│   ├── test_main.py        # Test Cases for RSA-OAEP Encryption and Decryption
+│   └── test_primes.py      # Test Cases for Prime Number Selection
 └── README.md
 ```
 
-Keep these files in the same directory because `main.py` imports the other modules by their filenames.
+Keep the Python modules in the project root as shown because the imports use module filenames. The four test files belong inside tests/.
 
 ## Requirements
 
-- Python 3.12 or later recommended (the code uses modern type hints such as `str | bytes`).
+- Python 3.10 or later recommended.
+- pytest,hashlib for running the automated test suite.
 - No third-party packages are required by the five supplied implementation files; they use Python standard-library modules.
 
 ## Installation
@@ -197,7 +208,7 @@ Run:
 python main.py
 ```
 
-The current `main.py` example generates a 2048-bit RSA key pair, prompts for a message, encrypts it, decrypts it, and prints the original message, ciphertext integer, recovered message, and whether the round trip succeeded.
+The  `main.py`  generates a 2048-bit RSA key pair, prompts for a message, encrypts it, decrypts it, and prints the original message, ciphertext integer, recovered message, and whether the round trip succeeded.
 
 Key generation can take some time because it generates probable primes.
 
@@ -224,6 +235,9 @@ Key generation can take some time because it generates probable primes.
 - **Private-key handling:** The project returns private-key components as an integer tuple and does not implement secure key storage.
 - **Educational use:** This implementation has not been independently audited. Use a vetted cryptographic library for production applications.
 
+## Benchmarking
+**Pending**
+
 ## Testing
 
 For a `pytest` test suite:
@@ -249,13 +263,25 @@ Useful integration test cases include:
 - Unicode text, including accented characters and emoji.
 - Empty messages.
 - Raw bytes containing leading zero bytes.
-- Conversion round trips with fixed byte lengths.
+- Conversion round trip with fixed byte lengths.
 - Repeated encryption of the same message (ciphertexts should normally differ because OAEP uses a random seed).
 - Incorrect OAEP label.
 - Modified or invalid ciphertext.
 - Invalid ciphertext length/range.
 - Message exceeding the OAEP maximum length.
+- Maximum-length of message
+- Wrong private key
+- Binary byte round trip
 - Key sizes supported by the implementation, such as 2048 and 3072 bits.
+
+
+## Reference
+
+RSAES-OAEP is specified in RFC 8017: PKCS #1: RSA Cryptography Specifications, Version 2.2.
+- RFC: https://www.rfc-editor.org/rfc/rfc8017
+- RSAES-OAEP: Section 7.1
+- MGF1: Appendix B.2.1
+Use the RFC and relevant test vectors when validating an implementation. This project is educational and has not been independently audited.
 
 ## Disclaimer
 
