@@ -12,7 +12,7 @@ A Python implementation of RSA public-key encryption integrated with OAEP (Optim
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Usage](#usage)
-- [Key Implementation](#key-implementation-details)
+- [Key Implementation Details](#key-implementation-details)
 - [Notes](#notes)
 - [Testing](#testing)
 
