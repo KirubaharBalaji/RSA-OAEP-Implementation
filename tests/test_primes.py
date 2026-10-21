@@ -34,3 +34,24 @@ def test_invalid_prime_size():
 def test_invalid_rounds():
     with pytest.raises(ValueError):
         is_probable_prime(17, rounds=0)
+
+def test_invalid_primality_input_types():
+    with pytest.raises(TypeError):
+        is_probable_prime("17")
+
+    with pytest.raises(TypeError):
+        is_probable_prime(17.5)
+
+    with pytest.raises(TypeError):
+        is_probable_prime(True)
+
+
+def test_invalid_rounds_types():
+    with pytest.raises(TypeError):
+        is_probable_prime(17, rounds="10")
+
+    with pytest.raises(TypeError):
+        is_probable_prime(17, rounds=2.5)
+
+    with pytest.raises(TypeError):
+        is_probable_prime(17, rounds=True)
