@@ -157,6 +157,7 @@ Invalid padding or a mismatched label raises a `ValueError`.
 ```
 .
 ├── main.py             # Public integration API and example entry point
+├── benchmark_rsa.py    # Benchmark Test for RSA Algorithm
 ├── rsa.py              # RSA key generation and integer operations
 ├── oaep.py             # OAEP encoding/decoding and MGF1
 ├── primes.py            # Prime generation and Miller–Rabin test
@@ -225,10 +226,21 @@ Key generation can take some time because it generates probable primes.
 
 ## Testing
 
- For a `pytest` test suite:
+For a `pytest` test suite:
 
+Installation
 ```
-python -m pytest -v
+python -m pip install pytest
+```
+
+Verification
+```
+python -m pytest --version
+```
+
+Testing
+```
+python -m pytest -v test_main.py
 ```
 
 Useful integration test cases include:
