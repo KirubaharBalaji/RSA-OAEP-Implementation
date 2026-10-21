@@ -53,3 +53,72 @@ def test_decrypt_negative_number():
 
     with pytest.raises(ValueError):
         decrypt_int(-1, private_key)
+
+
+def test_3072_bit_key_generation():
+    public_key, private_key = generate_keypair(3072, 65537)
+
+    n, e = public_key
+    private_n, d = private_key
+
+    assert n.bit_length() == 3072
+    assert n == private_n
+    assert e == 65537
+    assert d > 0
+
+
+def test_encrypt_decrypt_n_minus_one():
+    public_key, private_key = generate_keypair(2048, 65537)
+    n, _ = public_key
+
+    message = n - 1
+    ciphertext = encrypt_int(message, public_key)
+
+    assert decrypt_int(ciphertext, private_key) == message
+
+
+def test_invalid_key_size_type():
+    with pytest.raises(TypeError):
+        generate_keypair("2048", 65537)
+
+    with pytest.raises(TypeError):
+        generate_keypair(2048.0, 65537)
+
+    with pytest.raises(TypeError):
+        generate_keypair(True, 65537)
+
+
+def test_key_size_too_small():
+    with pytest.raises(ValueError):
+        generate_keypair(1024, 65537)
+
+
+def test_invalid_public_exponent_type():
+    with pytest.raises(TypeError):
+        generate_keypair(2048, "65537")
+
+
+def test_ciphertext_equal_to_n():
+    public_key, private_key = generate_keypair(2048, 65537)
+    n, _ = public_key
+
+    with pytest.raises(ValueError):
+        decrypt_int(n, private_key)
+
+
+def test_ciphertext_greater_than_n():
+    public_key, private_key = generate_keypair(2048, 65537)
+    n, _ = public_key
+
+    with pytest.raises(ValueError):
+        decrypt_int(n + 1, private_key)
+
+
+def test_invalid_ciphertext_type():
+    _, private_key = generate_keypair(2048, 65537)
+
+    with pytest.raises(TypeError):
+        decrypt_int("12345", private_key)
+
+    with pytest.raises(TypeError):
+        decrypt_int(12.5, private_key)
