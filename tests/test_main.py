@@ -5,6 +5,8 @@ Run from this directory with:
 """
 import pytest
 
+import hashlib
+
 from main import (
     DEFAULT_PUBLIC_EXPONENT,
     decrypt,
@@ -93,3 +95,89 @@ def test_empty_message_round_trip(keypair_2048):
     public_key, private_key = keypair_2048
     assert decrypt(encrypt("", public_key), private_key) == ""
 
+
+
+def test_maximum_length_message(keypair_2048):
+    public_key, private_key = keypair_2048
+
+    # OAEP maximum: k - 2*hLen - 2.
+    # Assumes SHA-256 is used by the OAEP implementation.
+    modulus_bytes = (public_key[0].bit_length() + 7) // 8
+    max_length = modulus_bytes - 2 * hashlib.sha256().digest_size - 2
+
+    message = "A" * max_length
+    ciphertext = encrypt(message, public_key)
+
+    assert decrypt(ciphertext, private_key) == message
+
+
+def test_oversized_message_rejected(keypair_2048):
+    public_key, _ = keypair_2048
+
+    modulus_bytes = (public_key[0].bit_length() + 7) // 8
+    max_length = modulus_bytes - 2 * hashlib.sha256().digest_size - 2
+
+    message = "A" * (max_length + 1)
+
+    with pytest.raises((ValueError, OverflowError)):
+        encrypt(message, public_key)
+
+
+def test_same_message_produces_different_ciphertexts(keypair_2048):
+    public_key, private_key = keypair_2048
+    message = "RSA-OAEP randomness test"
+
+    ciphertext1 = encrypt(message, public_key)
+    ciphertext2 = encrypt(message, public_key)
+
+    assert ciphertext1 != ciphertext2
+    assert decrypt(ciphertext1, private_key) == message
+    assert decrypt(ciphertext2, private_key) == message
+
+
+def test_modified_ciphertext_rejected(keypair_2048):
+    public_key, private_key = keypair_2048
+    message = "Detect ciphertext modification"
+
+    ciphertext = encrypt(message, public_key)
+
+    # Assumes ciphertext is represented as an integer.
+    modified_ciphertext = ciphertext ^ 1
+
+    with pytest.raises((ValueError, OverflowError)):
+        decrypt(modified_ciphertext, private_key)
+
+
+def test_wrong_private_key_rejected(keypair_2048):
+    public_key, _ = keypair_2048
+    _, wrong_private_key = generate_keys(2048)
+
+    message = "Wrong private key test"
+    ciphertext = encrypt(message, public_key)
+
+    with pytest.raises((ValueError, OverflowError)):
+        decrypt(ciphertext, wrong_private_key)
+
+
+def test_3072_bit_rsa_round_trip():
+    public_key, private_key = generate_keys(3072)
+    message = "RSA-OAEP 3072-bit integration test"
+
+    ciphertext = encrypt(message, public_key)
+
+    assert decrypt(ciphertext, private_key) == message
+
+
+def test_binary_data_round_trip(keypair_2048):
+    public_key, private_key = keypair_2048
+
+    binary_data = bytes([
+        0x00, 0x01, 0x02, 0x7F,
+        0x80, 0xFE, 0xFF, 0x00
+    ])
+
+    ciphertext = encrypt_bytes(binary_data, public_key)
+    recovered_data = decrypt_bytes(ciphertext, private_key)
+
+    assert recovered_data == binary_data
+    assert isinstance(recovered_data, bytes)
