@@ -4,17 +4,17 @@ A Python implementation of RSA public-key encryption integrated with OAEP (Optim
 
 ## Table of Contents
 
-- Overview
-- Features
-- How It Works
-- Algorithm Overview
-- Project Structure
-- Requirements
-- Installation
-- Usage
-- Key Implementation Details
-- Notes
-- Testing
+- [Overview](#overview)
+- [Features](#features)
+- [How It Works](#how-it-works)
+- [Algorithm Overview](#algorithm-overview)
+- [Project Structure](#project-structure)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Key Implementation](#key-implementation-details)
+- [Notes](#notes)
+- [Testing](#testing)
 
 
 
