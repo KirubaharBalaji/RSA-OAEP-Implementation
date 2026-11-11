@@ -8,7 +8,6 @@ import pytest
 import hashlib
 
 from main import (
-    DEFAULT_PUBLIC_EXPONENT,
     decrypt,
     decrypt_bytes,
     encrypt,
