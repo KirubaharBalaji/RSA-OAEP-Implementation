@@ -17,7 +17,6 @@ A Python implementation of RSA public-key encryption integrated with OAEP (Optim
 - [Benchmarking](#benchmarking)
 - [Testing](#testing)
 - [Reference](#reference)
-- [Tool-use Disclosure](#tool-use-disclosure)
 - [Disclaimer](#disclaimer)
 
 ## Overview
@@ -428,14 +427,6 @@ Moriarty, K., Kaliski, B., Jonsson, J., Rusch, A.: *PKCS #1: RSA Cryptography Sp
 - MGF1: Appendix B.2.1.
 
 The project implements OAEP and MGF1 using SHA-256.
-
-## Tool-use Disclosure
-
-ChatGPT (OpenAI) was used to revise the wording and organization of this README, including the algorithm descriptions, project structure, setup and execution instructions, testing summary, and benchmarking description.
-
-It was also used to generate the Makefile and requirements.txt and to assist with source-code review and execution checks. The recorded verification summary above comes from that tool-assisted execution review.
-
-These checks provide evidence of functional behaviour for the tested cases, not a security certification.
 
 ## Disclaimer
 
