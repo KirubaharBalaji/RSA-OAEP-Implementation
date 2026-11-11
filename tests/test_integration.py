@@ -176,18 +176,16 @@ def test_ciphertext_length(rsa_keys):
 
 
 # Test 10: Byte conversion preserves leading zeros
+# Test 10: Byte conversion preserves leading zeros at modulus length
 def test_byte_conversion(rsa_keys):
-    public_key, private_key = rsa_keys
-
-    n, e = public_key
+    public_key, _ = rsa_keys
+    n, _ = public_key
     k = (n.bit_length() + 7) // 8
 
-    original = b"\x00\x00\x01\x02\x03"
+    original = b"\x00\x00\x01\x02\x03".rjust(k, b"\x00")
 
     integer_value = int.from_bytes(original, "big")
-
-    recovered = integer_value.to_bytes(
-        len(original), "big"
-    )
+    recovered = integer_value.to_bytes(k, "big")
 
     assert recovered == original
+    assert len(recovered) == k
