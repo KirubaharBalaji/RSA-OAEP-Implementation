@@ -100,8 +100,6 @@ def test_empty_message_round_trip(keypair_2048):
 def test_maximum_length_message(keypair_2048):
     public_key, private_key = keypair_2048
 
-    # OAEP maximum: k - 2*hLen - 2.
-    # Assumes SHA-256 is used by the OAEP implementation.
     modulus_bytes = (public_key[0].bit_length() + 7) // 8
     max_length = modulus_bytes - 2 * hashlib.sha256().digest_size - 2
 
