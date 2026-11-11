@@ -1,6 +1,5 @@
 
 import secrets
-import math
 
 
 def is_probable_prime(n, rounds=40):
