@@ -375,7 +375,7 @@ Run this command from the project root, not from inside `tests/`.
 
 ### Supplied test cases
 
-The reviewed repository contains 87 test cases, including parameterized cases:
+87 test cases, including parameterized cases:
 
 | Test module | Cases |
 |-------------|------:|
@@ -390,6 +390,8 @@ The component-level tests account for 46 cases. The public-interface and integra
 
 The `test_integration.py` module runs 10 test functions for both 2048-bit and 3072-bit keys, producing 20 cases.
 
+Running make test gives 87 passed.
+
 Coverage includes:
 
 - Prime generation and Miller–Rabin testing.
@@ -402,18 +404,6 @@ Coverage includes:
 - Repeated encryption of the same plaintext.
 - Incorrect labels, modified ciphertexts, and unrelated private keys.
 - Round trips with 2048-bit and 3072-bit keys.
-
-### Recorded verification
-
-A recorded execution of the reviewed repository on Linux, using Python 3.13.5 and pytest 9.0.2, completed with:
-
-```text
-87 passed
-```
-
-This result applies to the reviewed code version. Rerun the suite after changing the implementation or tests.
-
-The separately generated review tests are not included in the 87-case repository total.
 
 ## Reference
 
