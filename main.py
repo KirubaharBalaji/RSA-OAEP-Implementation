@@ -1,10 +1,7 @@
-"""Integration layer for the project's RSA-OAEP implementation.
+"""Integration layer for the RSA-OAEP implementation.
 
-Expected sibling files:
-    oaep.py             -> oaep_encode, oaep_decode
-    rsa.py              -> generate_keypair, encrypt_int, decrypt_int
-    byte_conversion.py  -> bytes_to_integer, integer_to_bytes, string_to_bytes,
-                           bytes_to_string
+Combines OAEP encoding (oaep.py), RSA operations (rsa.py) and
+byte/integer conversion (byte_conversion.py).
 """
 
 from oaep import oaep_encode, oaep_decode
