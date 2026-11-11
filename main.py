@@ -85,10 +85,8 @@ def decrypt_bytes(ciphertext: int, private_key: tuple[int, int], label: bytes = 
 
 
 if __name__ == "__main__":
-    # Simple manual smoke test. Key generation can take a little while.
     public_key, private_key = generate_keys(2048)
     plaintext = input("Message to encrypt: ")
-    #plaintext = "RSA-OAEP integration test: café 🔐"
     encrypted = encrypt(plaintext, public_key)
     recovered = decrypt(encrypted, private_key)
 
