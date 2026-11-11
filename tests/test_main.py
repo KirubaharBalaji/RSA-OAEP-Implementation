@@ -15,7 +15,6 @@ from main import (
     generate_keys,
 )
 from byte_conversion import bytes_to_integer, integer_to_bytes, string_to_bytes, bytes_to_string
-from oaep import oaep_encode
 
 
 @pytest.fixture(scope="module")
