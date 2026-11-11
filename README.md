@@ -375,7 +375,7 @@ Run this command from the project root, not from inside `tests/`.
 
 ### Supplied test cases
 
-87 test cases, including parameterized cases:
+The test suite contains 87 test cases, including parameterized cases:
 
 | Test module | Cases |
 |-------------|------:|
@@ -390,7 +390,7 @@ The component-level tests account for 46 cases. The public-interface and integra
 
 The `test_integration.py` module runs 10 test functions for both 2048-bit and 3072-bit keys, producing 20 cases.
 
-Running make test gives 87 passed.
+Running `make test` gives `87 passed`.
 
 Coverage includes:
 
