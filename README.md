@@ -1,6 +1,6 @@
 # RSA-OAEP Encryption and Decryption in Python
 
-A Python implementation of RSA public-key encryption integrated with OAEP (Optimal Asymmetric Encryption Padding). The project separates RSA operations, OAEP encoding/decoding, prime generation, and byte/integer conversion into individual modules, with `main.py` providing the integration layer.
+A Python implementation of RSA public-key encryption integrated with OAEP (Optimal Asymmetric Encryption Padding). The project separates RSA operations, OAEP encoding and decoding, prime generation, and byte/integer conversion into individual modules, with `main.py` providing the integration layer.
 
 ## Table of Contents
 
@@ -17,14 +17,14 @@ A Python implementation of RSA public-key encryption integrated with OAEP (Optim
 - [Benchmarking](#benchmarking)
 - [Testing](#testing)
 - [Reference](#reference)
-
-
+- [Tool-use Disclosure](#tool-use-disclosure)
+- [Disclaimer](#disclaimer)
 
 ## Overview
 
-RSA is an asymmetric cryptographic algorithm that uses a public key and a private key. OAEP adds randomized encoding before RSA encryption, helping make encryption probabilistic: encrypting the same message more than once can produce different ciphertexts.
+RSA is an asymmetric cryptographic algorithm that uses a public key and a private key. OAEP adds randomized encoding before RSA encryption, making encryption probabilistic: encrypting the same message more than once can produce different ciphertexts.
 
-This project implements the following components:
+This project implements:
 
 - RSA key-pair generation and integer encryption/decryption.
 - OAEP encoding and decoding using SHA-256 and MGF1.
@@ -35,21 +35,22 @@ This project implements the following components:
 
 - **RSA key generation:** Configurable modulus size, with a minimum of 2048 bits in this implementation.
 - **RSA integer operations:** Public-key encryption and private-key decryption of integer representatives.
-- **OAEP padding:** Randomized encoding and padding validation.
+- **OAEP padding:** Randomized encoding and validation of the recovered padding structure.
 - **SHA-256 and MGF1:** SHA-256 is used for the OAEP label hash and mask generation.
-- **String and raw-byte support:** UTF-8 string functions and byte-oriented functions are available.
+- **String and raw-byte support:** Separate interfaces for UTF-8 text and binary data.
 - **Byte/integer conversions:** Big-endian conversion helpers, including fixed-length integer-to-byte conversion to preserve leading zero bytes.
 - **Optional OAEP label:** Supports a byte-string label that must match during encryption and decryption.
-- **Input validation:** Checks key sizes, exponent constraints, integer ranges, and invalid OAEP encoding conditions.
-- **Randomized encryption:** OAEP uses a random seed, so encrypting the same plaintext repeatedly should normally produce different ciphertexts.
-- **Automated tests:** Separate test modules for the RSA, OAEP, integration, and prime-generation components.
-- **Performance benchmark:** Measures RSA key generation, encryption, and decryption for 2048-bit and 3072-bit keys.
+- **Input validation:** Checks key sizes, exponent constraints, integer ranges, and invalid OAEP encodings.
+- **Randomized encryption:** OAEP uses a fresh random seed, so repeated encryption of the same plaintext normally produces different ciphertexts.
+- **Automated tests:** Component-level, public-interface, and integration tests.
+- **Performance benchmark:** Measures RSA key generation and integer encryption/decryption for 2048-bit and 3072-bit keys.
+- **Makefile:** Provides installation, syntax-checking, execution, testing, and benchmarking commands.
 
 ## How It Works
 
 ### Encryption flow
 
-1. Convert a plaintext string to UTF-8 bytes (for `encrypt`).
+1. Convert a plaintext string to UTF-8 bytes when using `encrypt()`.
 2. OAEP-encode the plaintext bytes using SHA-256 and MGF1.
 3. Convert the OAEP-encoded byte sequence to an integer.
 4. Encrypt the integer with the RSA public key.
@@ -58,11 +59,11 @@ This project implements the following components:
 ### Decryption flow
 
 1. Decrypt the ciphertext integer with the RSA private key.
-2. Convert the resulting integer back to a fixed-length byte sequence based on the RSA modulus size.
+2. Convert the recovered integer to a fixed-length byte sequence matching the RSA modulus length.
 3. OAEP-decode the byte sequence and validate the label hash and padding structure.
-4. Return the original plaintext as a UTF-8 string or bytes.
+4. Return the plaintext as a UTF-8 string or raw bytes.
 
-```
+```text
 Plaintext string
       |
       v
@@ -93,6 +94,8 @@ OAEP decoding
 Original plaintext bytes -> UTF-8 string (if requested)
 ```
 
+The byte-oriented functions skip UTF-8 conversion and operate directly on plaintext bytes.
+
 ## Algorithm Overview
 
 ### 1. RSA key generation
@@ -100,22 +103,20 @@ Original plaintext bytes -> UTF-8 string (if requested)
 1. Generate two distinct probable primes, `p` and `q`.
 2. Calculate the modulus: `n = p × q`.
 3. Calculate Euler's totient: `φ(n) = (p − 1)(q − 1)`.
-4. Check that public exponent `e` is odd, at least 3, smaller than `φ(n)`, and coprime to `φ(n)`.
+4. Check that the public exponent `e` is odd, at least 3, smaller than `φ(n)`, and coprime to `φ(n)`.
 5. Calculate the private exponent: `d = e⁻¹ mod φ(n)`.
-6. Return public key `(n, e)` and private key `(n, d)`.
+6. Return the public key `(n, e)` and private key `(n, d)`.
 
-The integration layer defaults to `e = 65537`; the RSA module requires a modulus size of at least 2048 bits.
+The integration layer defaults to `e = 65537`. The RSA module requires a modulus size of at least 2048 bits.
 
 ### 2. Prime generation and Miller–Rabin
 
 1. Generate a random candidate with the requested bit length.
-2. Set its highest bit and make it odd.
-3. Reject candidates divisible by generated small primes up to 1000.
-4. Apply the Miller–Rabin probable-prime test (40 rounds by default).
-5. Return a candidate that passes the test.
+2. Set the highest bit to preserve the requested bit length and the lowest bit to make the candidate odd.
+3. Apply the Miller–Rabin probable-prime test, using 40 rounds by default.
+4. Return the candidate if it passes; otherwise, generate another candidate.
 
-The primes.py does not use the small-prime sieve. Miller–Rabin is probabilistic: a passing candidate is considered probably prime.
-
+The implementation does not use a small-prime sieve. Miller–Rabin is probabilistic, so a passing candidate is considered probably prime.
 
 ### 3. OAEP encoding
 
@@ -128,14 +129,15 @@ The implementation uses SHA-256, so `hLen = 32` bytes.
 5. Generate `seedMask = MGF1(maskedDB, hLen)` and XOR it with the seed to produce `maskedSeed`.
 6. Construct `EM = 0x00 || maskedSeed || maskedDB`.
 
-Here, `k` is the RSA modulus length in bytes. The maximum message length is `k − 2hLen − 2` bytes.
+Here, `||` denotes concatenation and `k` is the RSA modulus length in bytes. The maximum message length is `k − 2hLen − 2` bytes.
 
 ### 4. MGF1 with SHA-256
 
-1. Append a 4-byte big-endian counter to the seed.
-2. Hash `seed || counter` with SHA-256 for each counter value.
-3. Concatenate hash outputs until enough mask bytes are generated.
-4. Return exactly the requested number of bytes.
+1. Start a counter at zero.
+2. Encode each counter value as four big-endian bytes.
+3. Hash `seed || counter` with SHA-256.
+4. Concatenate successive hash outputs until enough mask bytes have been generated.
+5. Return exactly the requested number of bytes.
 
 ### 5. RSA encryption and decryption
 
@@ -144,145 +146,299 @@ The OAEP-encoded bytes are converted to a big-endian integer `m`.
 - **Encryption:** `c = m^e mod n`
 - **Decryption:** `m = c^d mod n`
 
-The decrypted integer is converted back to exactly `k` bytes before OAEP decoding, preserving leading zero bytes.
+The decrypted integer is converted back to exactly `k` bytes before OAEP decoding. This restores the leading zero bytes required by the encoded message structure.
 
 ### 6. OAEP decoding
 
 1. Check the minimum encoded length and leading `0x00` byte.
 2. Split the encoding into `maskedSeed` and `maskedDB`.
-3. Regenerate masks and recover the seed and data block using XOR.
+3. Regenerate the masks and recover the seed and data block using XOR.
 4. Recompute and compare the label hash.
-5. Validate zero padding and locate the `0x01` separator.
+5. Validate the zero padding and locate the `0x01` separator.
 6. Return the bytes after the separator.
 
 Invalid padding or a mismatched label raises a `ValueError`.
 
 ## Project Structure
 
-```
+```text
 .
-├── main.py                 # Public integration and entry point
-├── rsa.py                  # RSA key generation and integer operations
-├── oaep.py                 # OAEP encoding/decoding and MGF1
-├── primes.py               # Prime generation and Miller–Rabin test
-├── byte_conversion.py      # String/byte/integer conversion helpers
-├── benchmark_rsa.py        # Benchmark Test for RSA Algorithm
-├── tests/                  # Test Case Folder
-│   ├── test_oaep.py        # Test Cases for OAEP Encoding and Decoding
-│   ├── test_rsa.py         # Test Cases for RSA Encryption and Decryption
-│   ├── test_main.py        # Test Cases for RSA-OAEP Encryption and Decryption
-│   └── test_primes.py      # Test Cases for Prime Number Selection
-└── README.md
+├── Makefile                 # Installation, syntax check, run, test and benchmark targets
+├── requirements.txt         # Third-party test dependency
+├── README.md                # Project documentation
+├── main.py                  # Public integration layer and interactive demonstration
+├── rsa.py                   # RSA key generation and integer operations
+├── oaep.py                  # OAEP encoding, decoding and MGF1
+├── primes.py                # Prime generation and Miller–Rabin test
+├── byte_conversion.py       # String, byte and integer conversion helpers
+├── benchmark_rsa.py         # RSA performance benchmark
+└── tests/
+    ├── test_primes.py       # Prime-generation tests
+    ├── test_rsa.py          # RSA operation tests
+    ├── test_oaep.py         # OAEP and MGF1 tests
+    ├── test_main.py         # Public-interface tests
+    └── test_integration.py  # Integration tests for both key sizes
 ```
 
-Keep the Python modules in the project root as shown because the imports use module filenames. The four test files belong inside tests/.
+Keep the implementation modules in the project root because the imports use their filenames. All five test modules belong inside `tests/`.
+
+Run the documented commands from the project root, which contains `main.py`.
 
 ## Requirements
 
-- Python 3.10 or later recommended.
-- pytest,hashlib for running the automated test suite.
-- No third-party packages are required by the five supplied implementation files; they use Python standard-library modules.
+- **Python 3.10 or later.**
+- **pytest** for automated testing, listed in `requirements.txt`.
+- **Make** only when using the Makefile commands.
+
+The implementation and benchmark use Python's standard library. No third-party cryptographic library is required.
+
+Modules such as `hashlib` and `secrets` are included with Python and do not need separate installation.
+
+The test dependency in `requirements.txt` is:
+
+```text
+pytest>=7.0
+```
 
 ## Installation
 
-1. Install Python if it is not already installed.
-2. Clone or download this repository.
-3. Open a terminal in the project directory.
-4. Confirm that all five `.py` files are in the same directory.
+1. Install Python 3.10 or later.
+2. Clone or extract the repository.
+3. Open a terminal in the project root.
+4. Check the Python version and install the test dependency:
 
-Check your Python version:
-
-```
+```bash
 python --version
+python -m pip install -r requirements.txt
 ```
 
-On some systems, use `python3` instead of `python`.
+### Syntax check
+
+Check the implementation and benchmark files for Python syntax errors:
+
+```bash
+python -m py_compile main.py rsa.py primes.py oaep.py byte_conversion.py benchmark_rsa.py
+```
+
+Python source files run directly with the interpreter. This syntax check does not create a standalone executable.
+
+### Makefile commands
+
+When Make is installed, the following commands are available:
+
+| Command | Purpose |
+|---------|---------|
+| `make help` | List available targets |
+| `make install` | Install the test dependency |
+| `make build` | Check the implementation and benchmark syntax |
+| `make run` | Run the interactive demonstration |
+| `make test` | Run all supplied tests |
+| `make benchmark` | Run the RSA benchmark |
+
+For example:
+
+```bash
+make install
+make build
+```
+
+On systems where Python 3 is invoked as `python3`, replace `python` with `python3` in the direct commands. For Makefile commands, specify the interpreter:
+
+```bash
+make install PYTHON=python3
+make build PYTHON=python3
+```
+
+Make is optional for execution. The direct Python commands can be used on systems where Make is unavailable.
 
 ## Usage
 
 ### Run the interactive example
 
-Run:
+From the project root:
 
-```
+```bash
 python main.py
 ```
 
-The  `main.py`  generates a 2048-bit RSA key pair, prompts for a message, encrypts it, decrypts it, and prints the original message, ciphertext integer, recovered message, and whether the round trip succeeded.
+Alternatively:
 
-Key generation can take some time because it generates probable primes.
+```bash
+make run
+```
+
+The demonstration generates a 2048-bit RSA key pair, prompts for a message, encrypts it, decrypts it, and prints:
+
+- The original message.
+- The ciphertext integer.
+- The recovered message.
+- Whether the recovered message matches the original.
+
+Key-generation time varies because probable primes are generated randomly.
+
+With the default 2048-bit key and SHA-256, the message must not exceed 190 UTF-8 bytes. This is a byte limit, not a character limit. Oversized messages are rejected.
+
+### Public interface
+
+The following functions are available in `main.py`:
+
+| Function | Purpose |
+|----------|---------|
+| `generate_keys(bits=2048, e=65537)` | Generate the public and private keys |
+| `encrypt(message, public_key, label=b"")` | Encrypt a UTF-8 string and return an integer ciphertext |
+| `decrypt(ciphertext, private_key, label=b"", output_bytes=False)` | Decrypt to a UTF-8 string, or return bytes when requested |
+| `encrypt_bytes(message, public_key, label=b"")` | Encrypt raw bytes |
+| `decrypt_bytes(ciphertext, private_key, label=b"")` | Decrypt to raw bytes |
+
+Pass `output_bytes=True` as a keyword argument when requesting bytes from `decrypt()`.
 
 ## Key Implementation Details
 
-- **OAEP hash:** SHA-256.
-- **Mask generation:** MGF1 implemented with SHA-256.
-- **Randomness:** OAEP seeds and prime candidates use Python's `secrets` module.
-- **Prime testing:** Miller–Rabin probable-prime test with 40 rounds by default.
-- **Default public exponent:** `65537`.
-- **Default example key size:** 2048 bits.
-- **Ciphertext representation:** integer, rather than a hexadecimal or byte string.
-- **OAEP label:** optional bytes; the default is an empty label (`b""`).
+| Setting | Value |
+|---------|-------|
+| OAEP hash | SHA-256 |
+| Mask generation | MGF1 using SHA-256 |
+| OAEP seed length | 32 bytes |
+| Randomness | Python's `secrets` module |
+| Prime testing | Miller–Rabin, 40 rounds by default |
+| Default public exponent | `65537` |
+| Default demonstration key size | 2048 bits |
+| Minimum supported modulus size | 2048 bits |
+| Ciphertext representation | Integer |
+| OAEP label | Optional bytes, default `b""` |
 
 ## Notes
 
 - **Keep module files together:** `main.py` imports `oaep.py`, `rsa.py`, and `byte_conversion.py`; `rsa.py` imports `primes.py`.
 - **Use matching keys:** Encrypt with the public key and decrypt with its corresponding private key.
 - **Use the same OAEP label:** A non-empty label supplied during encryption must be supplied unchanged during decryption.
-- **Observe the message-size limit:** With SHA-256 and a 2048-bit RSA modulus, the maximum OAEP plaintext size is 190 bytes. Longer data should use a suitable hybrid-encryption design rather than direct RSA-OAEP encryption.
-- **Ciphertexts are integers:** Define a consistent serialization format if storing or transmitting ciphertexts.
+- **Observe message-size limits:** SHA-256 OAEP permits at most 190 bytes with a 2048-bit modulus and 318 bytes with a 3072-bit modulus.
+- **Ciphertexts are integers:** A consistent serialization format is needed when storing or transmitting them.
 - **Preserve leading zeros:** Convert the decrypted integer to the modulus-sized byte length before OAEP decoding.
 - **Encryption is randomized:** A fresh OAEP seed means identical messages normally produce different ciphertexts.
-- **Private-key handling:** The project returns private-key components as an integer tuple and does not implement secure key storage.
-- **Educational use:** This implementation has not been independently audited. Use a vetted cryptographic library for production applications.
+- **Private-key handling:** Private-key components are returned as an integer tuple. Secure persistent key storage is not implemented.
+- **Security limitations:** The implementation has not undergone a security audit and does not guarantee constant-time rejection of invalid encodings.
+- **Generated files:** Syntax checks and test runs may create `__pycache__/`, `.pytest_cache/`, and `.pyc` files. These are not needed in the submission archive.
 
 ## Benchmarking
-**Pending**
+
+Run from the project root:
+
+```bash
+python benchmark_rsa.py
+```
+
+Alternatively:
+
+```bash
+make benchmark
+```
+
+The benchmark evaluates 2048-bit and 3072-bit RSA using public exponent `65537`.
+
+For each key size, it performs:
+
+- Five key-generation trials.
+- 100 RSA integer encryption operations.
+- 100 RSA integer decryption operations.
+
+Encryption and decryption use the integer representative `12345` and one generated key pair for each key size. The recovered integer is checked against the original.
+
+The script reports mean and median execution times in seconds.
+
+These measurements cover RSA key generation and integer operations. They do not include OAEP encoding, OAEP decoding, or the complete RSA-OAEP workflow.
 
 ## Testing
 
-For a `pytest` test suite:
+### Run the complete suite
 
-Installation
-```
-python -m pip install pytest
-```
+From the project root:
 
-Verification
-```
-python -m pytest --version
+```bash
+python -m pytest -v tests/
 ```
 
-Testing
+Alternatively:
+
+```bash
+make test
 ```
-python -m pytest -v test_main.py
+
+### Run one test module
+
+For the public-interface tests:
+
+```bash
+python -m pytest -v tests/test_main.py
 ```
 
-Useful integration test cases include:
+Run this command from the project root, not from inside `tests/`.
 
-- Normal ASCII text.
-- Unicode text, including accented characters and emoji.
-- Empty messages.
-- Raw bytes containing leading zero bytes.
-- Conversion round trip with fixed byte lengths.
-- Repeated encryption of the same message (ciphertexts should normally differ because OAEP uses a random seed).
-- Incorrect OAEP label.
-- Modified or invalid ciphertext.
-- Invalid ciphertext length/range.
-- Message exceeding the OAEP maximum length.
-- Maximum-length of message
-- Wrong private key
-- Binary byte round trip
-- Key sizes supported by the implementation, such as 2048 and 3072 bits.
+### Supplied test cases
 
+The reviewed repository contains 87 test cases, including parameterized cases:
+
+| Test module | Cases |
+|-------------|------:|
+| `tests/test_primes.py` | 7 |
+| `tests/test_rsa.py` | 14 |
+| `tests/test_oaep.py` | 25 |
+| `tests/test_main.py` | 21 |
+| `tests/test_integration.py` | 20 |
+| **Total** | **87** |
+
+The component-level tests account for 46 cases. The public-interface and integration tests account for the remaining 41 cases.
+
+The `test_integration.py` module runs 10 test functions for both 2048-bit and 3072-bit keys, producing 20 cases.
+
+Coverage includes:
+
+- Prime generation and Miller–Rabin testing.
+- RSA key generation, integer operations, and input validation.
+- MGF1 output lengths and determinism.
+- OAEP encoding, decoding, and padding validation.
+- ASCII, Unicode, empty messages, and raw binary data.
+- Fixed-length byte/integer conversion and leading zero bytes.
+- Maximum-length messages and rejection of oversized messages.
+- Repeated encryption of the same plaintext.
+- Incorrect labels, modified ciphertexts, and unrelated private keys.
+- Round trips with 2048-bit and 3072-bit keys.
+
+### Recorded verification
+
+A recorded execution of the reviewed repository on Linux, using Python 3.13.5 and pytest 9.0.2, completed with:
+
+```text
+87 passed
+```
+
+This result applies to the reviewed code version. Rerun the suite after changing the implementation or tests.
+
+The separately generated review tests are not included in the 87-case repository total.
 
 ## Reference
 
-RSAES-OAEP is specified in RFC 8017: PKCS #1: RSA Cryptography Specifications, Version 2.2.
+RSAES-OAEP is specified in:
+
+Moriarty, K., Kaliski, B., Jonsson, J., Rusch, A.: *PKCS #1: RSA Cryptography Specifications Version 2.2*. RFC 8017 (2016).
+
 - RFC: https://www.rfc-editor.org/rfc/rfc8017
-- RSAES-OAEP: Section 7.1
-- MGF1: Appendix B.2.1
-Use the RFC and relevant test vectors when validating an implementation. This project is educational and has not been independently audited.
+- RSA encryption and decryption primitives: Section 5.1.
+- RSAES-OAEP: Section 7.1.
+- MGF1: Appendix B.2.1.
+
+The project implements OAEP and MGF1 using SHA-256.
+
+## Tool-use Disclosure
+
+ChatGPT (OpenAI) was used to revise the wording and organization of this README, including the algorithm descriptions, project structure, setup and execution instructions, testing summary, and benchmarking description.
+
+It was also used to generate the Makefile and requirements.txt and to assist with source-code review and execution checks. The recorded verification summary above comes from that tool-assisted execution review.
+
+These checks provide evidence of functional behaviour for the tested cases, not a security certification.
 
 ## Disclaimer
 
 This project is intended for educational and academic use. It demonstrates cryptographic concepts and is not a substitute for a vetted cryptographic library in production systems.
+
+Passing functional tests does not establish production readiness, constant-time behaviour, or protection against every possible attack.
