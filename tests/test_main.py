@@ -137,7 +137,6 @@ def test_modified_ciphertext_rejected(keypair_2048):
 
     ciphertext = encrypt(message, public_key)
 
-    # Assumes ciphertext is represented as an integer.
     modified_ciphertext = ciphertext ^ 1
 
     with pytest.raises((ValueError, OverflowError)):
