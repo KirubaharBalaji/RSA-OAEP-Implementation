@@ -1,7 +1,7 @@
 """Integration tests for main.py's RSA-OAEP public interface.
 
-Run from this directory with:
-    python -m pytest -v test_main.py
+Run from the repository root:
+    python -m pytest -v tests/test_main.py
 """
 import pytest
 
